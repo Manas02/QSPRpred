@@ -10,6 +10,7 @@ from parameterized import parameterized
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from qsprpred.models.assessment.methods import Assessor
+from qsprpred.data.descriptors.fingerprints import MorganFP
 
 from ..data.processing.feature_filters import LowVarianceFilter
 from ..models.scikit_learn import SklearnModel
@@ -20,6 +21,8 @@ from ..utils.testing.base import QSPRTestCase
 from ..utils.testing.path_mixins import ModelDataSetsPathMixIn
 from sklearn.model_selection import KFold
 from ..data.sampling.splits import RandomSplit
+
+from .chemicalspace import PCAPlot, TSNEPlot, UMAPPlot
 
 
 class PlottingTest(ModelDataSetsPathMixIn, QSPRTestCase):
@@ -50,6 +53,7 @@ class PlottingTest(ModelDataSetsPathMixIn, QSPRTestCase):
 
 class ROCPlotTest(PlottingTest):
     """Test ROC curve plotting class."""
+
     def setUp(self):
         super().setUp()
         self.setUpPaths()
@@ -58,23 +62,18 @@ class ROCPlotTest(PlottingTest):
         """Test plotting ROC curve for single task."""
         dataset = self.createLargeTestDataSet(
             "test_roc_plot_single_data",
-            target_props=[{
-                "name": "CL",
-                "task": TargetTasks.SINGLECLASS,
-                "th": [6.5]
-            }],
+            target_props=[{"name": "CL", "task": TargetTasks.SINGLECLASS, "th": [6.5]}],
         )
         model = self.getModel("test_roc_plot_single_model")
         score_func = "roc_auc_ovr"
         Assessor(
             "crossval",
-            split = KFold(n_splits=5, shuffle=True, random_state=model.randomState),
-            scoring = score_func
+            split=KFold(n_splits=5, shuffle=True, random_state=model.randomState),
+            scoring=score_func,
         )(model, dataset, pipeline=self.getDefaultPrep())
-        Assessor(
-            "test",
-            split=RandomSplit(test_fraction=0.2),
-            scoring=score_func)(model, dataset, pipeline=self.getDefaultPrep())
+        Assessor("test", split=RandomSplit(test_fraction=0.2), scoring=score_func)(
+            model, dataset, pipeline=self.getDefaultPrep()
+        )
         model.save()
         # make plots
         plt = ROCPlot([model], ["crossval"])
@@ -91,13 +90,15 @@ class ROCPlotTest(PlottingTest):
 
 class MetricsPlotTest(PlottingTest):
     """Test metrics plotting class."""
+
     def setUp(self):
         super().setUp()
         self.setUpPaths()
 
     @parameterized.expand(
         [
-            (task, task, th) for task, th in (
+            (task, task, th)
+            for task, th in (
                 ("binary", [6.5]),
                 ("multi_class", [0, 2, 10, 1100]),
             )
@@ -110,11 +111,11 @@ class MetricsPlotTest(PlottingTest):
             target_props=[
                 {
                     "name": "CL",
-                    "task":
-                        (
-                            TargetTasks.SINGLECLASS
-                            if task == "binary" else TargetTasks.MULTICLASS
-                        ),
+                    "task": (
+                        TargetTasks.SINGLECLASS
+                        if task == "binary"
+                        else TargetTasks.MULTICLASS
+                    ),
                     "th": th,
                 }
             ],
@@ -123,13 +124,12 @@ class MetricsPlotTest(PlottingTest):
         score_func = "roc_auc_ovr"
         Assessor(
             "crossval",
-            split = KFold(n_splits=5, shuffle=True, random_state=model.randomState),
-            scoring = score_func
+            split=KFold(n_splits=5, shuffle=True, random_state=model.randomState),
+            scoring=score_func,
         )(model, dataset, pipeline=self.getDefaultPrep())
-        Assessor(
-            "test",
-            split=RandomSplit(test_fraction=0.2),
-            scoring=score_func)(model, dataset, pipeline=self.getDefaultPrep())
+        Assessor("test", split=RandomSplit(test_fraction=0.2), scoring=score_func)(
+            model, dataset, pipeline=self.getDefaultPrep()
+        )
         model.save()
         # generate metrics plot and associated files
         plt = MetricsPlot([model], ["crossval", "test"])
@@ -142,26 +142,24 @@ class MetricsPlotTest(PlottingTest):
 
 class CorrPlotTest(PlottingTest):
     """Test correlation plotting class."""
+
     def setUp(self):
         super().setUp()
         self.setUpPaths()
 
     def testPlotSingle(self):
         """Test plotting correlation for single task."""
-        dataset = self.createLargeTestDataSet(
-            "test_corr_plot_single_data"
-        )
+        dataset = self.createLargeTestDataSet("test_corr_plot_single_data")
         model = self.getModel("test_corr_plot_single_model", alg=RandomForestRegressor)
         score_func = "r2"
         Assessor(
             "crossval",
-            split = KFold(n_splits=5, shuffle=True, random_state=model.randomState),
-            scoring = score_func
+            split=KFold(n_splits=5, shuffle=True, random_state=model.randomState),
+            scoring=score_func,
         )(model, dataset, pipeline=self.getDefaultPrep())
-        Assessor(
-            "test",
-            split=RandomSplit(test_fraction=0.2),
-            scoring=score_func)(model, dataset, pipeline=self.getDefaultPrep())
+        Assessor("test", split=RandomSplit(test_fraction=0.2), scoring=score_func)(
+            model, dataset, pipeline=self.getDefaultPrep()
+        )
         model.save()
         # generate metrics plot and associated files
         plt = CorrelationPlot([model], ["crossval", "test"])
@@ -174,6 +172,7 @@ class CorrPlotTest(PlottingTest):
 
 class WilliamsPlotTest(PlottingTest):
     """Test plotting Williams plot for single task."""
+
     def setUp(self):
         super().setUp()
         self.setUpPaths()
@@ -193,13 +192,12 @@ class WilliamsPlotTest(PlottingTest):
         score_func = "r2"
         Assessor(
             "crossval",
-            split = KFold(n_splits=5, shuffle=True, random_state=model.randomState),
-            scoring = score_func
+            split=KFold(n_splits=5, shuffle=True, random_state=model.randomState),
+            scoring=score_func,
         )(model, dataset, pipeline=self.getDefaultPrep())
-        Assessor(
-            "test",
-            split=RandomSplit(test_fraction=0.2),
-            scoring=score_func)(model, dataset, pipeline=self.getDefaultPrep())
+        Assessor("test", split=RandomSplit(test_fraction=0.2), scoring=score_func)(
+            model, dataset, pipeline=self.getDefaultPrep()
+        )
         model.fitDataset(dataset, pipeline)
         model.save()
         # generate metrics plot and associated files
@@ -214,13 +212,15 @@ class WilliamsPlotTest(PlottingTest):
 
 class ConfusionMatrixPlotTest(PlottingTest):
     """Test confusion matrix plotting class."""
+
     def setUp(self):
         super().setUp()
         self.setUpPaths()
 
     @parameterized.expand(
         [
-            (task, task, th) for task, th in (
+            (task, task, th)
+            for task, th in (
                 ("binary", [6.5]),
                 ("multi_class", [0, 2, 10, 1100]),
             )
@@ -233,11 +233,11 @@ class ConfusionMatrixPlotTest(PlottingTest):
             target_props=[
                 {
                     "name": "CL",
-                    "task":
-                        (
-                            TargetTasks.SINGLECLASS
-                            if task == "binary" else TargetTasks.MULTICLASS
-                        ),
+                    "task": (
+                        TargetTasks.SINGLECLASS
+                        if task == "binary"
+                        else TargetTasks.MULTICLASS
+                    ),
                     "th": th,
                 }
             ],
@@ -246,13 +246,12 @@ class ConfusionMatrixPlotTest(PlottingTest):
         score_func = "roc_auc_ovr"
         Assessor(
             "crossval",
-            split = KFold(n_splits=5, shuffle=True, random_state=model.randomState),
-            scoring = score_func
+            split=KFold(n_splits=5, shuffle=True, random_state=model.randomState),
+            scoring=score_func,
         )(model, dataset, pipeline=self.getDefaultPrep())
-        Assessor(
-            "test",
-            split=RandomSplit(test_fraction=0.2),
-            scoring=score_func)(model, dataset, pipeline=self.getDefaultPrep())
+        Assessor("test", split=RandomSplit(test_fraction=0.2), scoring=score_func)(
+            model, dataset, pipeline=self.getDefaultPrep()
+        )
         model.save()
         # make plots
         plt = ConfusionMatrixPlot([model], ["crossval"])
@@ -282,6 +281,89 @@ class ConfusionMatrixPlotTest(PlottingTest):
             self.assertIsInstance(ax, Figure)
         self.assertIsInstance(cm_dict, dict)
         self.assertTrue(
-            os.path.
-            exists(f"{model.outPrefix}_CL_test_0_confusion_matrix.png")
+            os.path.exists(f"{model.outPrefix}_CL_test_0_confusion_matrix.png")
         )
+
+
+class PCAPlotTest(PlottingTest):
+    """Test PCA plotting class."""
+
+    def setUp(self):
+        super().setUp()
+        self.setUpPaths()
+
+    def testPCAPlotGeneration(self):
+        dataset = self.createLargeTestDataSet(
+            "test_pca_plot_data",
+            target_props=[{"name": "CL", "task": TargetTasks.SINGLECLASS, "th": [6.5]}],
+        )
+        dataset.addDescriptors([MorganFP()])
+
+        out_path = "test_fingerprint_pca.jpg"
+
+        # Instantiate and test the class
+        plotter = PCAPlot(dataset)
+        X_pca = plotter.make(out_path=out_path)
+
+        # Validation
+        self.assertEqual(X_pca.shape[1], 2)
+        self.assertTrue(os.path.exists(out_path))
+
+        # Cleanup
+        os.remove(out_path)
+
+
+class TSNEPlotTest(PlottingTest):
+    """Test TSNE plotting class."""
+
+    def setUp(self):
+        super().setUp()
+        self.setUpPaths()
+
+    def testTSNEPlotGeneration(self):
+        dataset = self.createLargeTestDataSet(
+            "test_tsne_plot_data",
+            target_props=[{"name": "CL", "task": TargetTasks.SINGLECLASS, "th": [6.5]}],
+        )
+        dataset.addDescriptors([MorganFP()])
+
+        out_path = "test_fingerprint_tsne.jpg"
+
+        # Instantiate and test the class
+        plotter = TSNEPlot(dataset)
+        X_tsne = plotter.make(out_path=out_path)
+
+        # Validation
+        self.assertEqual(X_tsne.shape[1], 2)
+        self.assertTrue(os.path.exists(out_path))
+
+        # Cleanup
+        os.remove(out_path)
+
+
+class UMAPPlotTest(PlottingTest):
+    """Test UMAP plotting class."""
+
+    def setUp(self):
+        super().setUp()
+        self.setUpPaths()
+
+    def testUMAPPlotGeneration(self):
+        dataset = self.createLargeTestDataSet(
+            "test_umap_plot_data",
+            target_props=[{"name": "CL", "task": TargetTasks.SINGLECLASS, "th": [6.5]}],
+        )
+        dataset.addDescriptors([MorganFP()])
+
+        out_path = "test_fingerprint_umap.jpg"
+
+        # Instantiate and test the class
+        plotter = UMAPPlot(dataset)
+        X_umap = plotter.make(out_path=out_path)
+
+        # Validation
+        self.assertEqual(X_umap.shape[1], 2)
+        self.assertTrue(os.path.exists(out_path))
+
+        # Cleanup
+        os.remove(out_path)
