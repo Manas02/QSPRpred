@@ -72,3 +72,37 @@ class UMAPPlot:
         fig.savefig(out_path, dpi=200, bbox_inches="tight")
         plt.close(fig)
         return X_umap
+    
+
+class TSNEPlot:
+    """Class to generate t-SNE plots for a dataset's descriptors."""
+
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def make(self, out_path="fingerprint_tsne.jpg"):
+        df = self.dataset.getDescriptors()
+        numeric_df = df.select_dtypes(include=[np.number, bool]).astype(int)
+
+        tsne = TSNE(n_components=2, random_state=42)
+        X_tsne = tsne.fit_transform(numeric_df)
+
+        plot_df = pd.DataFrame(X_tsne, columns=["TSNE1", "TSNE2"])
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ax.scatter(
+            plot_df["TSNE1"],
+            plot_df["TSNE2"],
+            alpha=0.7,
+            edgecolors="DarkSlateGrey",
+            s=50,
+            c="royalblue",
+        )
+
+        ax.set_title("Fingerprint TSNE Visualization")
+        ax.set_xlabel("TSNE1")
+        ax.set_ylabel("TSNE2")
+        ax.grid(True, linestyle="--", alpha=0.3)
+
+        fig.savefig(out_path, dpi=200, bbox_inches="tight")
+        plt.close(fig)
+        return X_tsne
