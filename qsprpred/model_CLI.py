@@ -389,7 +389,7 @@ if __name__ == "__main__":
 
     # Backup files
     datasets = [QSPRTable.fromFile(data_file) for data_file in args.data_paths]
-    pipelines = [DatasetPipeline.fromFile(f"{dataset.path}_pipeline.json") for dataset in datasets]
+    pipelines = [DatasetPipeline.fromFile(f"{dataset.path}/_pipeline.json") for dataset in datasets]
     file_prefixes = [
         f"{alg}_{dataset.name}" for alg in args.model_types for dataset in datasets
     ]
